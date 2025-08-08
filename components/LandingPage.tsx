@@ -22,6 +22,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loadingMessage, setLoadingMessage] = useState('')
   const { toast } = useToast()
 
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     }
     
     setLoading(true)
+    setLoadingMessage(authMode === 'signup' ? 'Creating your account...' : 'Logging you in...')
 
     try {
       if (authMode === 'signup') {
@@ -85,15 +87,18 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
         if (error) {
           toast({
-            title: 'Sign Up Error',
-            description: error.message,
+            title: 'Sign Up Failed',
+            description: error.message === 'User already registered' 
+              ? 'This email is already registered. Please sign in instead.'
+              : error.message,
             variant: 'destructive',
           })
         } else {
           toast({
-            title: 'Account Created Successfully! 🎉',
-            description: 'Check your email for the confirmation link to complete your registration.',
+            title: 'Check Your Email! 📧',
+            description: 'We sent you a confirmation link. Please check your inbox and spam folder to verify your account.',
           })
+          // Show a more prominent notification
           setShowAuthModal(false)
           setEmail('')
           setPassword('')
@@ -106,16 +111,21 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
         if (error) {
           toast({
-            title: 'Sign In Error',
-            description: error.message,
+            title: 'Sign In Failed',
+            description: error.message === 'Invalid login credentials' 
+              ? 'Wrong email or password. Please try again.'
+              : error.message,
             variant: 'destructive',
           })
         } else {
+          setLoadingMessage('Success! Redirecting...')
           toast({
             title: 'Welcome Back! 🚀',
-            description: 'Successfully signed in to your account.',
+            description: 'Successfully logged in.',
           })
-          onGetStarted()
+          setTimeout(() => {
+            onGetStarted()
+          }, 500)
         }
       }
     } catch (error) {
@@ -150,16 +160,16 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="relative z-10 px-6 py-8"
+        className="relative z-10 px-4 sm:px-6 py-6 sm:py-8"
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <span className="text-white font-black text-3xl tracking-tight">SirkupAI</span>
-              <span className="gradient-text font-black text-3xl tracking-tight ml-2">Vision</span>
+              <span className="text-white font-black text-xl sm:text-3xl tracking-tight">SirkupAI</span>
+              <span className="gradient-text font-black text-xl sm:text-3xl tracking-tight ml-1 sm:ml-2">Vision</span>
             </motion.div>
           </div>
           
@@ -169,10 +179,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           >
             <Button 
               onClick={() => openAuthModal('signin')}
-              className="neuro-button text-white px-8 py-3 rounded-2xl font-semibold text-lg hover:scale-105 transition-all duration-300"
+              className="neuro-button text-white px-4 sm:px-8 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-lg hover:scale-105 transition-all duration-300"
             >
               Sign In
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <ArrowRight className="ml-1 sm:ml-2 h-4 sm:h-5 w-4 sm:w-5" />
             </Button>
           </motion.div>
         </div>
@@ -180,23 +190,23 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
       {/* Hero Section */}
       <main className="relative z-10">
-        <div className="max-w-7xl mx-auto px-6 pt-8 pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-8 sm:pb-16">
           <div className="text-center">
             <motion.div 
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="inline-flex items-center px-6 py-3 neuro-card rounded-full mb-8 hover:scale-105 transition-all duration-300"
+              className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 neuro-card rounded-full mb-6 sm:mb-8 hover:scale-105 transition-all duration-300"
             >
-              <Sparkles className="h-5 w-5 gradient-text mr-3" />
-              <span className="gradient-text text-lg font-bold">Powered by Next-Gen AI</span>
+              <Sparkles className="h-4 sm:h-5 w-4 sm:w-5 gradient-text mr-2 sm:mr-3" />
+              <span className="gradient-text text-sm sm:text-lg font-bold">Powered by Next-Gen AI</span>
             </motion.div>
             
             <motion.h1 
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.4 }}
-              className="text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-none"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-none"
             >
               <motion.span 
                 initial={{ opacity: 0 }}
@@ -232,12 +242,12 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               transition={{ duration: 0.8, delay: 1.2 }}
               className="max-w-4xl mx-auto mb-8"
             >
-              <p className="text-xl md:text-2xl text-gray-300 mb-4 font-light leading-relaxed">
+              <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-4 font-light leading-relaxed">
                 <span className="font-bold gradient-text">Say it.</span> 
                 <span className="text-white font-bold"> See it.</span> 
                 <span className="font-bold gradient-text"> Use it.</span>
               </p>
-              <p className="text-lg text-gray-400 font-medium">
+              <p className="text-base sm:text-lg text-gray-400 font-medium px-4 sm:px-0">
                 Transform your wildest imagination into stunning reality with AI that actually gets it.
               </p>
             </motion.div>
@@ -255,9 +265,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 <Button 
                   onClick={() => openAuthModal('signup')}
                   size="lg"
-                  className="gradient-logo text-white px-10 py-4 text-lg font-bold rounded-2xl hover:scale-105 transition-all duration-300 pulse-glow"
+                  className="gradient-logo text-white px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg font-bold rounded-xl sm:rounded-2xl hover:scale-105 transition-all duration-300 pulse-glow"
                 >
-                  <Rocket className="mr-3 h-6 w-6" />
+                  <Rocket className="mr-2 sm:mr-3 h-5 sm:h-6 w-5 sm:w-6" />
                   Start Creating Free
                 </Button>
               </motion.div>
@@ -270,7 +280,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                   onClick={() => openAuthModal('signin')}
                   size="lg"
                   variant="outline"
-                  className="neuro-button text-white px-10 py-4 text-lg font-semibold rounded-2xl hover:scale-105 transition-all duration-300"
+                  className="neuro-button text-white px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-xl sm:rounded-2xl hover:scale-105 transition-all duration-300"
                 >
                   Sign In
                 </Button>
@@ -286,17 +296,17 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 1.6 }}
-        className="relative mb-16 overflow-hidden w-full"
+        className="relative mb-8 sm:mb-16 overflow-hidden w-full"
       >
-        <div className="flex animate-slide-left space-x-6">
+        <div className="flex animate-slide-left space-x-4 sm:space-x-6">
           {/* First set of images */}
-          <div className="flex space-x-8 min-w-full">
+          <div className="flex space-x-4 sm:space-x-8 min-w-full">
             {sliderImages.map((src, index) => (
               <motion.div
                 key={index}
                 whileHover={{ scale: 1.05, rotateY: 5 }}
                 transition={{ type: "spring", stiffness: 300 }}
-                className="w-96 h-[28rem] neuro-card rounded-3xl overflow-hidden flex-shrink-0"
+                className="w-48 h-64 sm:w-72 sm:h-80 md:w-96 md:h-[28rem] neuro-card rounded-2xl sm:rounded-3xl overflow-hidden flex-shrink-0"
               >
                 <img 
                   src={src}
@@ -308,13 +318,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
           
           {/* Duplicate set for seamless loop */}
-          <div className="flex space-x-6 min-w-full" aria-hidden="true">
+          <div className="flex space-x-4 sm:space-x-6 min-w-full" aria-hidden="true">
             {sliderImages.map((src, index) => (
               <motion.div
                 key={`duplicate-${index}`}
                 whileHover={{ scale: 1.05, rotateY: 5 }}
                 transition={{ type: "spring", stiffness: 300 }}
-                className="w-96 h-[28rem] neuro-card rounded-3xl overflow-hidden flex-shrink-0"
+                className="w-48 h-64 sm:w-72 sm:h-80 md:w-96 md:h-[28rem] neuro-card rounded-2xl sm:rounded-3xl overflow-hidden flex-shrink-0"
               >
                 <img 
                   src={src}
@@ -328,7 +338,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </motion.div>
       
       <main className="relative z-10">
-        <div className="max-w-7xl mx-auto px-6 pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-8 sm:pb-16">
 
 
           {/* Features Section */}
@@ -336,7 +346,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 2.6 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-24"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-12 sm:mb-24"
           >
             {features.map((feature, index) => {
               const Icon = feature.icon
@@ -353,20 +363,20 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 >
                   <motion.div 
                     whileHover={{ scale: 1.1, rotate: 5 }}
-                    className={`w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center transition-all duration-500 ${
+                    className={`w-16 sm:w-20 h-16 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-2xl sm:rounded-3xl flex items-center justify-center transition-all duration-500 ${
                       hoveredFeature === index 
                         ? 'gradient-logo scale-110 pulse-glow' 
                         : 'neuro-card group-hover:scale-105'
                     }`}
                   >
-                    <Icon className={`h-10 w-10 transition-colors duration-300 ${
+                    <Icon className={`h-8 sm:h-10 w-8 sm:w-10 transition-colors duration-300 ${
                       hoveredFeature === index ? 'text-white' : 'text-orange-400'
                     }`} />
                   </motion.div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-orange-300 transition-colors">
+                  <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 group-hover:text-orange-300 transition-colors">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-400 group-hover:text-gray-300 transition-colors text-lg leading-relaxed">
+                  <p className="text-gray-400 group-hover:text-gray-300 transition-colors text-base sm:text-lg leading-relaxed">
                     {feature.description}
                   </p>
                 </motion.div>
@@ -383,13 +393,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           >
             <motion.div 
               whileHover={{ scale: 1.02 }}
-              className="neuro-card rounded-3xl p-16 max-w-5xl mx-auto"
+              className="neuro-card rounded-2xl sm:rounded-3xl p-8 sm:p-12 md:p-16 max-w-5xl mx-auto"
             >
               <motion.h2 
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 3.4 }}
-                className="text-5xl md:text-6xl font-black mb-8"
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 sm:mb-8"
               >
                 <span className="text-white">Ready to</span>
                 <br />
@@ -401,7 +411,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 3.6 }}
-                className="text-2xl text-gray-300 mb-12 font-light"
+                className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 sm:mb-12 font-light px-4 sm:px-0"
               >
                 Join the creative revolution. Your imagination is the only limit.
               </motion.p>
@@ -415,11 +425,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 <Button 
                   onClick={() => openAuthModal('signup')}
                   size="lg"
-                  className="gradient-logo text-white px-16 py-6 text-2xl font-black rounded-2xl hover:scale-105 transition-all duration-300 pulse-glow"
+                  className="gradient-logo text-white px-8 sm:px-12 md:px-16 py-4 sm:py-5 md:py-6 text-lg sm:text-xl md:text-2xl font-black rounded-xl sm:rounded-2xl hover:scale-105 transition-all duration-300 pulse-glow"
                 >
-                  <Brain className="mr-4 h-8 w-8" />
+                  <Brain className="mr-2 sm:mr-3 md:mr-4 h-6 sm:h-7 md:h-8 w-6 sm:w-7 md:w-8" />
                   START FOR FREE
-                  <ArrowRight className="ml-4 h-8 w-8" />
+                  <ArrowRight className="ml-2 sm:ml-3 md:ml-4 h-6 sm:h-7 md:h-8 w-6 sm:w-7 md:w-8" />
                 </Button>
               </motion.div>
             </motion.div>
@@ -434,7 +444,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="w-full max-w-md neuro-card rounded-3xl p-8 relative"
+            className="w-full max-w-sm sm:max-w-md neuro-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 relative"
           >
             {/* Close Button */}
             <button
@@ -445,15 +455,15 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </button>
 
             {/* Modal Header */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-6 sm:mb-8">
               <div className="flex items-center justify-center space-x-2 mb-4">
-                <span className="text-white font-black text-2xl tracking-tight">SirkupAI</span>
-                <span className="gradient-text font-black text-2xl tracking-tight">Vision</span>
+                <span className="text-white font-black text-lg sm:text-2xl tracking-tight">SirkupAI</span>
+                <span className="gradient-text font-black text-lg sm:text-2xl tracking-tight">Vision</span>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
                 {authMode === 'signin' ? 'Welcome Back' : 'Join the Revolution'}
               </h2>
-              <p className="text-gray-400">
+              <p className="text-sm sm:text-base text-gray-400">
                 {authMode === 'signin' 
                   ? 'Sign in to continue creating' 
                   : 'Create your account and start generating amazing images'
@@ -462,10 +472,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
 
             {/* Tab Navigation */}
-            <div className="grid w-full grid-cols-2 neuro-card p-2 rounded-xl mb-6">
+            <div className="grid w-full grid-cols-2 neuro-card p-1.5 sm:p-2 rounded-lg sm:rounded-xl mb-4 sm:mb-6">
               <button
                 onClick={() => setAuthMode('signin')}
-                className={`px-4 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                className={`px-3 sm:px-4 py-2 sm:py-3 rounded-md sm:rounded-lg text-sm sm:text-base font-semibold transition-all duration-300 ${
                   authMode === 'signin'
                     ? 'gradient-logo text-white shadow-lg'
                     : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
@@ -475,7 +485,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </button>
               <button
                 onClick={() => setAuthMode('signup')}
-                className={`px-4 py-3 rounded-lg font-semibold transition-all duration-300 ${
+                className={`px-3 sm:px-4 py-2 sm:py-3 rounded-md sm:rounded-lg text-sm sm:text-base font-semibold transition-all duration-300 ${
                   authMode === 'signup'
                     ? 'gradient-logo text-white shadow-lg'
                     : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
@@ -521,10 +531,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full gradient-logo text-white font-bold text-lg py-4 rounded-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                className="w-full gradient-logo text-white font-bold text-base sm:text-lg py-3 sm:py-4 rounded-lg sm:rounded-xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-4 sm:mt-6"
               >
                 {loading 
-                  ? (authMode === 'signin' ? 'Signing In...' : 'Creating Account...') 
+                  ? loadingMessage 
                   : (authMode === 'signin' ? 'Sign In' : 'Create Account')
                 }
               </Button>

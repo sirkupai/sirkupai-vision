@@ -425,13 +425,13 @@ export default function ImageGenerator() {
 
         {/* Generated Images or Loading Animation */}
         {loading ? (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">Generating Your Vision...</h2>
+          <div className="mb-12 px-4">
+            <h2 className="text-lg sm:text-2xl font-bold text-white mb-6 text-center">Generating Your Vision...</h2>
             <LoadingAnimation />
           </div>
         ) : generations.length > 0 ? (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">Your Creations</h2>
+          <div className="mb-12 px-4">
+            <h2 className="text-lg sm:text-2xl font-bold text-white mb-6 text-center">Your Creations</h2>
             <div className="space-y-8">
               {generations.map((generation) => (
                 <div key={generation.id} className="text-center">
@@ -440,22 +440,22 @@ export default function ImageGenerator() {
                     {generation.image_urls.map((url, index) => (
                       <div
                         key={index}
-                        className="relative group cursor-pointer transform transition-all duration-300 hover:scale-105"
+                        className="relative group cursor-pointer transform transition-all duration-300 hover:scale-105 w-full max-w-[90vw] sm:max-w-none"
                       >
-                        <div className="neuro-card rounded-2xl overflow-hidden w-80 h-80 sm:w-96 sm:h-96 md:w-[32rem] md:h-[32rem] relative">
+                        <div className="neuro-card rounded-2xl overflow-hidden w-full aspect-square sm:w-96 sm:h-96 md:w-[32rem] md:h-[32rem] relative">
                           <img
                             src={url}
                             alt={`Generated image ${index + 1}`}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             onClick={() => setFullsizeImage(url)}
                           />
-                          {/* Small Download Button - Top Right */}
+                          {/* Small Download Button - Top Right - Always visible on mobile */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
                               downloadIndividualImage(url, index, generation.prompt)
                             }}
-                            className="absolute top-3 right-3 bg-black/70 hover:bg-black/90 text-white p-2 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100"
+                            className="absolute top-3 right-3 bg-black/70 hover:bg-black/90 text-white p-2 rounded-full transition-all duration-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                           >
                             <Download className="h-4 w-4" />
                           </button>
