@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>N8N Webhook Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+    <h1>Test N8N Webhook ZIP Response</h1>
+    <input type="text" id="prompt" placeholder="Enter prompt" value="closeup shot of a girl with freckles" style="width: 400px; padding: 10px;">
+    <button onclick="testWebhook()">Test Webhook</button>
+    <div id="status"></div>
+    <div id="images"></div>
+
+    <script>
+        async function testWebhook() {
+            const prompt = document.getElementById('prompt').value;
+            const status = document.getElementById('status');
+            const imagesDiv = document.getElementById('images');
+            
+            status.innerHTML = '<p>🚀 Calling webhook...</p>';
+            imagesDiv.innerHTML = '';
+            
+            try {
+                const webhookUrl = 'https://sweet-connection.up.railway.app/webhook/e0d106c5-51b5-4644-a994-44f6efb4f21e';
+                
+                console.log('Calling webhook with prompt:', prompt);
+                const response = await fetch(`${webhookUrl}?prompt=${encodeURIComponent(prompt)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/zip, application/json',
+                    },
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText || 'Failed'}`);
+                }
+                
+                const blob = await response.blob();
+                console.log('Blob size:', blob.size, 'bytes');
+                console.log('Blob type:', blob.type);
+                
+                status.innerHTML += '<p>📦 Received blob: ' + blob.size + ' bytes, type: ' + blob.type + '</p>';
+                
+                // Try to load as ZIP
+                try {
+                    const zip = await JSZip.loadAsync(blob);
+                    console.log('ZIP loaded successfully');
+                    console.log('Files in ZIP:', Object.keys(zip.files));
+                    
+                    status.innerHTML += '<p>✅ ZIP loaded! Files: ' + Object.keys(zip.files).join(', ') + '</p>';
+                    
+                    // Extract and display images
+                    for (const [filename, file] of Object.entries(zip.files)) {
+                        if (!file.dir && filename.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+                            console.log('Processing image:', filename);
+                            const imageBlob = await file.async('blob');
+                            const imageUrl = URL.createObjectURL(imageBlob);
+                            
+                            const img = document.createElement('img');
+                            img.src = imageUrl;
+                            img.style.width = '200px';
+                            img.style.margin = '10px';
+                            imagesDiv.appendChild(img);
+                            
+                            status.innerHTML += '<p>🖼️ Extracted image: ' + filename + '</p>';
+                        }
+                    }
+                } catch (zipError) {
+                    console.error('ZIP parsing error:', zipError);
+                    status.innerHTML += '<p>❌ ZIP parsing error: ' + zipError.message + '</p>';
+                    
+                    // Try to read as text
+                    try {
+                        const text = await blob.text();
+                        console.log('Response as text (first 500 chars):', text.substring(0, 500));
+                        status.innerHTML += '<p>Response text: ' + text.substring(0, 200) + '...</p>';
+                    } catch (e) {
+                        console.error('Could not read as text');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                status.innerHTML += '<p>❌ Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
