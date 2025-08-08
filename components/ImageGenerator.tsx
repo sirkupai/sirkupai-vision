@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Download, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
-import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 
 interface Generation {
@@ -231,13 +231,13 @@ export default function ImageGenerator() {
       console.log('🚀 Starting image generation with prompt:', prompt)
       
       // Call the n8n webhook
-      const webhookUrl = 'https://sweet-connection.up.railway.app/webhook/e0d106c5-51b5-4644-a994-44f6efb4f21e'
+      const webhookUrl = 'https://sweet-connection.up.railway.app/webhook/v1/api/image-gen'
       
       console.log('📡 Calling webhook:', webhookUrl)
       const response = await fetch(`${webhookUrl}?prompt=${encodeURIComponent(prompt)}`, {
         method: 'GET',
         headers: {
-          'Accept': 'application/zip, application/json',
+          'Accept': 'image/png, image/jpeg, application/json',
         },
       })
 
@@ -250,24 +250,19 @@ export default function ImageGenerator() {
         throw new Error(`HTTP ${response.status}: ${errorText || 'Failed to generate images'}`)
       }
 
-      // Get the response as blob
+      // Get the response as blob (single PNG image)
       const responseBlob = await response.blob()
       console.log('📦 Received blob size:', responseBlob.size, 'bytes')
       console.log('📦 Blob type:', responseBlob.type)
       
-      // Check if it's actually a zip file
+      // Check if we received an image
       if (responseBlob.size === 0) {
         throw new Error('Received empty response from server')
       }
       
-      // Try to load as ZIP
-      let zip
-      try {
-        zip = await JSZip.loadAsync(responseBlob)
-        console.log('✅ ZIP loaded successfully')
-        console.log('📁 Files in ZIP:', Object.keys(zip.files))
-      } catch (zipError) {
-        console.error('❌ ZIP parsing error:', zipError)
+      // Verify it's an image
+      if (!responseBlob.type.startsWith('image/')) {
+        console.error('❌ Expected image, got:', responseBlob.type)
         // Try to read as text to see what we actually got
         try {
           const responseText = await responseBlob.text()
@@ -275,28 +270,16 @@ export default function ImageGenerator() {
         } catch (e) {
           console.error('Could not read response as text')
         }
-        throw new Error(`Failed to parse ZIP file. The server might have returned an error instead of images.`)
+        throw new Error(`Expected image file, but received: ${responseBlob.type}`)
       }
       
-      const base64Images: string[] = []
-
-      // Extract images from zip and convert to base64
-      console.log('🎨 Extracting images from ZIP...')
-      for (const [filename, file] of Object.entries(zip.files)) {
-        if (!file.dir && filename.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/)) {
-          console.log('🖼️ Processing image:', filename)
-          const imageBlob = await file.async('blob')
-          const base64Data = await blobToBase64(imageBlob)
-          base64Images.push(base64Data)
-          console.log('✅ Converted to base64:', filename)
-        }
-      }
-
-      console.log('🎯 Total images extracted:', base64Images.length)
+      // Convert the single image to base64
+      console.log('🎨 Converting image to base64...')
+      const base64Data = await blobToBase64(responseBlob)
+      const base64Images = [base64Data] // Single image in array
       
-      if (base64Images.length === 0) {
-        throw new Error('No valid images found in the ZIP file. The generation might have failed.')
-      }
+      console.log('✅ Image converted to base64 successfully')
+      console.log('🎯 Generated 1 image')
 
       // Create a new generation object
       const aspectRatio = selectedFormat === 'Portrait' ? '9:16' : selectedFormat === 'Square' ? '1:1' : '16:9'
@@ -357,7 +340,7 @@ export default function ImageGenerator() {
 
       toast({
         title: 'Success! 🎉',
-        description: `Generated ${base64Images.length} stunning images!`,
+        description: 'Generated 1 stunning image!',
       })
       
       // Clear the prompt after successful generation
@@ -415,38 +398,15 @@ export default function ImageGenerator() {
 
   const handleDownload = async (generation: Generation) => {
     try {
-      const zip = new JSZip()
-      
-      for (let i = 0; i < generation.image_urls.length; i++) {
-        const imageUrl = generation.image_urls[i]
-        let blob: Blob
-        
-        // Check if it's a base64 data URL or a regular URL
-        if (imageUrl.startsWith('data:')) {
-          // Convert base64 to blob
-          const response = await fetch(imageUrl)
-          blob = await response.blob()
-        } else {
-          // Fetch from URL
-          const response = await fetch(imageUrl)
-          blob = await response.blob()
-        }
-        
-        zip.file(`image_${i + 1}.png`, blob)
+      // Since we now have only one image, download it directly
+      if (generation.image_urls.length > 0) {
+        await downloadIndividualImage(generation.image_urls[0], 0, generation.prompt)
       }
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' })
-      saveAs(zipBlob, `sirkupai_${generation.id}.zip`)
-      
-      toast({
-        title: 'Download Started',
-        description: 'Your images are being downloaded',
-      })
     } catch (error) {
       console.error('Download error:', error)
       toast({
         title: 'Error',
-        description: 'Failed to download images',
+        description: 'Failed to download image',
         variant: 'destructive',
       })
     }
@@ -460,7 +420,6 @@ export default function ImageGenerator() {
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-r from-purple-500/5 to-pink-500/5 rounded-full blur-3xl floating-animation" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      
       <div className="max-w-7xl mx-auto p-4 sm:p-6 relative z-20">
 
         {/* Generated Images or Loading Animation */}
@@ -618,85 +577,54 @@ export default function ImageGenerator() {
         </div>
       </div>
       
-      {/* Magic Scrolling Images - Desktop Only - Below interface but peeking up */}
-      <div className="hidden lg:block relative overflow-visible pointer-events-none">
-        {/* Right Side Scrolling Track */}
-        <div className="absolute right-0 top-0 w-80 h-96 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-[#0a0a0a] z-10"></div>
-          <div className="flex animate-slide-right-to-left space-x-6" style={{ width: '200%' }}>
-            {/* First set */}
-            <div className="flex space-x-6 min-w-full">
-              {scrollingImages.slice(0, 3).map((src, index) => (
-                <div
-                  key={`right-${index}`}
-                  className="w-48 h-72 neuro-card rounded-3xl overflow-hidden flex-shrink-0 opacity-40 hover:opacity-70 transition-opacity duration-500"
-                >
-                  <img 
-                    src={src}
-                    alt={`SirkupAI Art ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-            {/* Duplicate for seamless loop */}
-            <div className="flex space-x-6 min-w-full">
-              {scrollingImages.slice(0, 3).map((src, index) => (
-                <div
-                  key={`right-dup-${index}`}
-                  className="w-48 h-72 neuro-card rounded-3xl overflow-hidden flex-shrink-0 opacity-40 hover:opacity-70 transition-opacity duration-500"
-                >
-                  <img 
-                    src={src}
-                    alt={`SirkupAI Art ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
+      {/* Magic Scrolling Images - Desktop Only - Landing Page Style */}
+      <motion.div 
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, delay: 0.5 }}
+        className="hidden lg:block relative mb-16 overflow-hidden w-full -mt-20"
+      >
+        <div className="flex animate-slide-left space-x-6">
+          {/* First set of images */}
+          <div className="flex space-x-8 min-w-full">
+            {scrollingImages.map((src, index) => (
+              <motion.div
+                key={index}
+                whileHover={{ scale: 1.05, rotateY: 5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="w-96 h-[28rem] neuro-card rounded-3xl overflow-hidden flex-shrink-0"
+              >
+                <img 
+                  src={src}
+                  alt={`SirkupAI Generated Art ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+            ))}
+          </div>
+          
+          {/* Duplicate set for seamless loop */}
+          <div className="flex space-x-6 min-w-full" aria-hidden="true">
+            {scrollingImages.map((src, index) => (
+              <motion.div
+                key={`duplicate-${index}`}
+                whileHover={{ scale: 1.05, rotateY: 5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="w-96 h-[28rem] neuro-card rounded-3xl overflow-hidden flex-shrink-0"
+              >
+                <img 
+                  src={src}
+                  alt={`SirkupAI Generated Art ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+            ))}
           </div>
         </div>
-
-        {/* Left Side Scrolling Track - Same level as right */}
-        <div className="absolute left-0 top-0 w-80 h-96 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0a0a0a] z-10"></div>
-          <div className="flex animate-slide-right-to-left-delayed space-x-6" style={{ width: '200%' }}>
-            {/* First set */}
-            <div className="flex space-x-6 min-w-full">
-              {scrollingImages.slice(3, 6).map((src, index) => (
-                <div
-                  key={`left-${index}`}
-                  className="w-48 h-72 neuro-card rounded-3xl overflow-hidden flex-shrink-0 opacity-40 hover:opacity-70 transition-opacity duration-500"
-                >
-                  <img 
-                    src={src}
-                    alt={`SirkupAI Art ${index + 4}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                ))}
-            </div>
-            {/* Duplicate for seamless loop */}
-            <div className="flex space-x-6 min-w-full">
-              {scrollingImages.slice(3, 6).map((src, index) => (
-                <div
-                  key={`left-dup-${index}`}
-                  className="w-48 h-72 neuro-card rounded-3xl overflow-hidden flex-shrink-0 opacity-40 hover:opacity-70 transition-opacity duration-500"
-                >
-                  <img 
-                    src={src}
-                    alt={`SirkupAI Art ${index + 4}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      </motion.div>
       
-      {/* Footer */}
-      <footer className="relative z-10 mt-16 pb-8">
+      {/* Footer - In its own full space below image scroll */}
+      <footer className="relative z-10 mt-24 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center border-t border-gray-800 pt-8">
             <div className="flex items-center justify-center space-x-2 mb-2">

@@ -110,7 +110,7 @@
 }
 
 .animate-slide-right-to-left {
-  animation: slideRightToLeft 25s linear infinite;
+  animation: slideRightToLeft 80s linear infinite;
 }
 
 .animate-slide-right-to-left-delayed {
