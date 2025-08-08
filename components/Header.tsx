@@ -64,11 +64,6 @@ export default function Header() {
             </div>
           </div>
           
-          <nav className="flex items-center space-x-6">
-            <button className="gradient-text font-bold text-lg border-b-2 border-orange-400 pb-2 px-4 rounded-t-lg neuro-button">
-              Images
-            </button>
-          </nav>
         </div>
 
         <DropdownMenu>

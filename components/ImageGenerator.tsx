@@ -30,6 +30,7 @@ export default function ImageGenerator() {
   const [currentMessage, setCurrentMessage] = useState(0)
   const [generationProgress, setGenerationProgress] = useState(0)
   const [startTime, setStartTime] = useState<number | null>(null)
+  const [fullsizeImage, setFullsizeImage] = useState<string | null>(null)
   const { toast } = useToast()
 
   // Get Supabase bucket images for scrolling effect
@@ -434,45 +435,40 @@ export default function ImageGenerator() {
             <div className="space-y-8">
               {generations.map((generation) => (
                 <div key={generation.id} className="text-center">
-                  {/* Images in horizontal row */}
+                  {/* Images in horizontal row - Full Size Display */}
                   <div className="flex justify-center gap-2 sm:gap-4 mb-4 flex-wrap">
                     {generation.image_urls.map((url, index) => (
                       <div
                         key={index}
-                        onClick={() => downloadIndividualImage(url, index, generation.prompt)}
                         className="relative group cursor-pointer transform transition-all duration-300 hover:scale-105"
                       >
-                        <div className="neuro-card rounded-2xl overflow-hidden w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 relative">
+                        <div className="neuro-card rounded-2xl overflow-hidden w-80 h-80 sm:w-96 sm:h-96 md:w-[32rem] md:h-[32rem] relative">
                           <img
                             src={url}
                             alt={`Generated image ${index + 1}`}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            onClick={() => setFullsizeImage(url)}
                           />
-                          {/* Download overlay */}
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                            <div className="text-white text-center">
-                              <Download className="h-8 w-8 mx-auto mb-2" />
-                              <p className="text-sm font-medium">Click to Download</p>
-                            </div>
-                          </div>
+                          {/* Small Download Button - Top Right */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              downloadIndividualImage(url, index, generation.prompt)
+                            }}
+                            className="absolute top-3 right-3 bg-black/70 hover:bg-black/90 text-white p-2 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100"
+                          >
+                            <Download className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
                   
-                  {/* Prompt and bulk download */}
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 flex-wrap">
+                  {/* Prompt only */}
+                  <div className="flex items-center justify-center">
                     <p className="text-gray-400 text-center max-w-2xl italic text-sm sm:text-base">
                       "{generation.prompt}"
                     </p>
-                    <Button
-                      onClick={() => handleDownload(generation)}
-                      size="sm"
-                      className="neuro-button text-white font-semibold px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download All
-                    </Button>
                   </div>
                 </div>
               ))}
@@ -640,6 +636,28 @@ export default function ImageGenerator() {
           </div>
         </div>
       </footer>
+
+      {/* Fullsize Image Modal */}
+      {fullsizeImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          onClick={() => setFullsizeImage(null)}
+        >
+          <div className="relative max-w-[90vw] max-h-[90vh]">
+            <img
+              src={fullsizeImage}
+              alt="Full size generated image"
+              className="max-w-full max-h-full object-contain rounded-2xl"
+            />
+            <button
+              onClick={() => setFullsizeImage(null)}
+              className="absolute top-4 right-4 bg-black/70 hover:bg-black/90 text-white p-2 rounded-full transition-all duration-300"
+            >
+              <span className="text-xl font-bold">×</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
